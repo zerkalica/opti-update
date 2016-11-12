@@ -1,52 +1,55 @@
 // @flow
 
-import promiseToObservable from './promiseToObservable'
-import type {UpdaterStatus, AsyncUpdate, SyncUpdate} from './interfaces'
-
-function createObservableThunk<V>(promiseThunk: () => Promise<V>): () => Observable<V, Error> {
-    return function fetch() {
-        return promiseToObservable(promiseThunk())
-    }
-}
-
-export interface Parent {
-    addAsyncs(asyncs: AsyncUpdate<*>[], syncs: SyncUpdate<*>[], status: ?UpdaterStatus): void;
-}
+import {Queue} from './queue'
+import SyncUpdate from './SyncUpdate'
+import type {Atom, Transact, Loader} from './interfaces'
+import AsyncUpdate from './AsyncUpdate'
 
 export default class Transaction {
-    _uo: Parent
-    _status: ?UpdaterStatus
-    _syncs: SyncUpdate<*>[] = []
-    _asyncs: AsyncUpdate<*>[] = []
+    _queue: Queue
+    _updates: SyncUpdate<any>[] = []
+    _transact: Transact
+    _rollback: boolean
 
-    constructor(uo: Parent) {
-        this._uo = uo
+    constructor(
+        queue: Queue,
+        transact: Transact,
+        rollback: boolean
+    ) {
+        this._queue = queue
+        this._transact = transact
+        this._rollback = rollback
     }
 
-    set(value: mixed): Transaction {
-        this._syncs.push(value)
+    set<V>(atom: Atom<V>, newValue: V): Transaction {
+        this._updates.push(new SyncUpdate(atom, newValue))
         return this
     }
 
-    promise(promiseThunk: () => Promise<*>): Transaction {
-        this._asyncs.push(createObservableThunk(promiseThunk))
-
-        return this
+    _run<V>(loader?: ?Loader<V>): void {
+        const updates = this._updates
+        if (loader) {
+            this._queue.run(new AsyncUpdate(
+                loader,
+                this._transact,
+                this._rollback
+            ))
+        }
+        const lastUpdate = this._queue.getLastUpdate()
+        for (let i = 0; i < updates.length; i++) {
+            const update = updates[i]
+            update.set()
+            if (lastUpdate) {
+                lastUpdate.pend(update)
+            }
+        }
     }
 
-    observable(fetch: () => Observable<*, Error>): Transaction {
-        this._asyncs.push(fetch)
-
-        return this
-    }
-
-    status(status: UpdaterStatus): Transaction {
-        this._status = status
-        return this
-    }
-
-    run(): Transaction {
-        this._uo.addAsyncs(this._asyncs, this._syncs, this._status)
-        return this
+    run<V>(loader?: ?Loader<V>): void {
+        if (this._updates.length > 1) {
+            this._transact(() => this._run(loader))
+        } else {
+            this._run(loader)
+        }
     }
 }

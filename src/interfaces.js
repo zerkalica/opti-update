@@ -1,10 +1,6 @@
 // @flow
 
-export interface UpdaterStatus {
-    complete: boolean;
-    pending: boolean;
-    error: ?Error;
-}
+import type UpdaterStatus from './UpdaterStatus'
 
 export type Transact = (fn: () => void) => void
 
@@ -13,14 +9,18 @@ export interface Atom<V> {
     get(): V;
 }
 
-export type GetAtom<V> = (v: V) => Atom<V>
-
-export type SyncUpdate<V> = V
-export type AsyncUpdate<V> = () => Observable<V, Error>
-
-export interface UpdaterOpts {
-    getAtom: GetAtom<*>,
-    transact: Transact,
-    abortOnError?: boolean,
-    rollbackOnAbort?: boolean
+interface ObservableLoader<V> {
+    type: 'observable';
+    atom: Atom<V>;
+    status: Atom<UpdaterStatus>;
+    fetch(): Observable<V, Error>;
 }
+
+interface PromiseLoader<V> {
+    type: 'promise';
+    atom: Atom<V>;
+    status: Atom<UpdaterStatus>;
+    fetch(): Promise<V>;
+}
+
+export type Loader<V> = ObservableLoader<V> | PromiseLoader<V>
