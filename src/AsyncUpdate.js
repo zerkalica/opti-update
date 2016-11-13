@@ -69,16 +69,12 @@ export default class AsyncUpdate<V> {
         this._pendingUpdates = []
     }
 
-    _abort(e: Error): void {
+    abort(e: Error): void {
         this._status.set(new UpdaterStatus('error', e))
         const pu = this._pendingUpdates
         for (let i = 0; i < pu.length; i++) {
             pu[i].rollback()
         }
-    }
-
-    abort(e: Error): void {
-        this._transact(() => this._abort(e))
     }
 }
 

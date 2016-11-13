@@ -4,23 +4,24 @@ Framework-agnostic, low-cost optimistic updates with transactions and rollbacks.
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
-- [Examples](#examples)
-- [Init](#init)
-- [Transactionally change multiple atoms and rollback on error](#transactionally-change-multiple-atoms-and-rollback-on-error)
+- [Setup with cellx](#setup-with-cellx)
+- [Rollback on promise error](#rollback-on-promise-error)
+- [Update on promise success](#update-on-promise-success)
+- [Attach all synced updates to last running fetch](#attach-all-synced-updates-to-last-running-fetch)
+- [More examples](#more-examples)
 
 <!-- /TOC -->
 
-## Examples
-    * Rollback data on failed promise: ``` npm run ex.rollback ```
 
-
-## Init
+## Setup with cellx
 
 ```js
 // @flow
-// Init Updater
-/* eslint-disable no-console */
 
+/**
+ * Auto rollback on error
+ */
+import {RecoverableError} from 'opti-update/index'
 import cellx from 'cellx'
 
 import {AtomUpdater, UpdaterStatus} from 'opti-update/index'
@@ -29,186 +30,136 @@ import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
 const Cell = cellx.Cell
 cellx.configure({asynchronous: false})
 
-export interface Some {
-    v: string;
-}
-
-export interface IComputable {
-    a: Some;
-    b: Some;
-    c: Some;
-    status: UpdaterStatus;
-}
-
-function toJs(err: Error): Object {
-    return {
-        message: err.message,
-        name: err.name
-    }
-}
-
-export interface ExampleSettings {
-    a: Atom<Some>;
-    b: Atom<Some>;
-    c: Atom<Some>;
-    aStatus: Atom<UpdaterStatus>;
-    computable: Cell<IComputable>;
-    updater: AtomUpdater;
-}
-
-export default function initUpdater(): ExampleSettings {
-    const a: Atom<Some> = new Cell({v: 'a'})
-    const b: Atom<Some> = new Cell({v: 'b'})
-    const c: Atom<Some> = new Cell({v: 'c'})
-
-    const aStatus: Atom<UpdaterStatus> = new Cell(new UpdaterStatus('pending'))
-
-    const computable: Cell<IComputable> = new Cell(() => {
-        const status = aStatus.get()
-
-        return {
-            status: {
-                ...status,
-                error: status.error ? toJs(status.error) : null
-            },
-            a: a.get(),
-            b: b.get(),
-            c: c.get()
-        }
-    })
-
-    const opts: AtomUpdaterOpts = {
-        transact: cellx.transact,
-        abortOnError: false,
-        rollback: true
-    }
-
-    const updater = new AtomUpdater(opts)
-
-    return {
-        updater,
-        a,
-        b,
-        c,
-        aStatus,
-        computable
-    }
-}
+const updater = new AtomUpdater({
+    transact: cellx.transact,
+    abortOnError: true,
+    rollback: true
+})
 ```
 
-## Transactionally change multiple atoms and rollback on error
+## Rollback on promise error
 
 ```js
 // @flow
-import {RecoverableError} from 'opti-update/index'
-import initUpdater from './initUpdater'
-const {computable, aStatus, a, b, c, updater} = initUpdater()
+const a = new Cell('1')
+const b = new Cell('1')
+const aStatus = new Cell(new UpdaterStatus('pending'))
 
-computable.subscribe((err: ?Error, {value}) => {
-    console.log('\nlistener:\n', value, '\n')
+a.subscribe((err: ?Error, {value}) => {
+    console.log('a =', value)
+})
+b.subscribe((err: ?Error, {value}) => {
+    console.log('b =', value)
+})
+aStatus.subscribe((err: ?Error, {value}) => {
+    console.log('c =', {...value, error: value.error ? value.error.message : null})
 })
 
-let fetchCount: number = 0
-console.log('update a, b, set status.pending:')
 updater.transaction()
-    .set(a, {v: 'a-2'})
-    .set(b, {v: 'b-2'})
+    .set(a, '2')
+    .set(b, '2')
     .run({
         type: 'promise',
         atom: a,
         status: aStatus,
-        fetch: () => {
-            console.log(`start fetch #${++fetchCount}`)
-            return Promise.reject(new Error('some error'))
-        },
+        fetch() {
+            return Promise.reject(new Error('some'))
+        }
     })
 
-console.log('update c:')
+/*
+c = { complete: false, pending: true, error: null }
+a = 2
+b = 2
+c = { complete: false, pending: false, error: 'some' }
+a = 1
+b = 1
+ */
+```
+
+## Update on promise success
+
+```js
+// @flow
+const a = new Cell('1')
+const b = new Cell('1')
+const aStatus = new Cell(new UpdaterStatus('pending'))
+
+a.subscribe((err: ?Error, {value}) => {
+    console.log('a =', value)
+})
+b.subscribe((err: ?Error, {value}) => {
+    console.log('b =', value)
+})
+aStatus.subscribe((err: ?Error, {value}) => {
+    console.log('c =', value)
+})
+
 updater.transaction()
-    .set(c, {v: 'c-1'})
-    .run()
-
-console.log('status.error is RecoverableError on next tick:')
-setTimeout(() => {
-    console.log('User calls retry: status.pending again')
-    const err = aStatus.get().error
-    if (!(err instanceof RecoverableError)) {
-        throw new Error('Something wrong')
-    }
-
-    err.retry()
-
-    console.log('status.error is RecoverableError on next tick again:')
-    setTimeout(() => {
-        const err = aStatus.get().error
-        console.log('User calls abort: restoring a, b, c, status.error is Error on next tick')
-        if (!(err instanceof RecoverableError)) {
-            throw new Error('Something wrong')
+    .set(a, '2')
+    .set(b, '2')
+    .run({
+        type: 'promise',
+        atom: a,
+        status: aStatus,
+        fetch() {
+            return Promise.resolve('3')
         }
-        err.abort()
-    }, 0)
-}, 0)
+    })
+
+/*
+c = UpdaterStatus { complete: false, pending: true, error: null }
+a = 2
+b = 2
+a = 3
+c = UpdaterStatus { complete: true, pending: false, error: null }
+ */
 ```
 
-Output:
+## Attach all synced updates to last running fetch
 
+```js
+// @flow
+const a = new Cell('1')
+const b = new Cell('1')
+const aStatus = new Cell(new UpdaterStatus('pending'))
+
+a.subscribe((err: ?Error, {value}) => {
+    console.log('a =', value)
+})
+b.subscribe((err: ?Error, {value}) => {
+    console.log('b =', value)
+})
+aStatus.subscribe((err: ?Error, {value}) => {
+    console.log('c =', {...value, error: value.error ? value.error.message : null})
+})
+
+updater.transaction()
+    .set(a, '2')
+    .set(b, '2')
+    .run({
+        type: 'promise',
+        atom: a,
+        status: aStatus,
+        fetch() {
+            return Promise.reject(new Error('some'))
+        }
+    })
+
+updater.transaction()
+    .set(b, '3')
+    .run()
+/*
+c = { complete: false, pending: true, error: null }
+a = 2
+b = 2
+b = 3
+c = { complete: false, pending: false, error: 'some' }
+a = 1
+b = 1
+ */
 ```
-update a, b, set status.pending:
-start fetch #1
 
-listener:
- { status: { complete: false, pending: true, error: null },
-  a: { v: 'a-2' },
-  b: { v: 'b-2' },
-  c: { v: 'c' } }
-
-update c:
-
-listener:
- { status: { complete: false, pending: true, error: null },
-  a: { v: 'a-2' },
-  b: { v: 'b-2' },
-  c: { v: 'c-1' } }
-
-status.error is RecoverableError on next tick:
-
-listener:
- { status:
-   { complete: false,
-     pending: false,
-     error: { message: 'some error', name: 'RecoverableError' } },
-  a: { v: 'a-2' },
-  b: { v: 'b-2' },
-  c: { v: 'c-1' } }
-
-User calls retry: status.pending again
-
-listener:
- { status: { complete: false, pending: true, error: null },
-  a: { v: 'a-2' },
-  b: { v: 'b-2' },
-  c: { v: 'c-1' } }
-
-start fetch #2
-status.error is RecoverableError on next tick again:
-
-listener:
- { status:
-   { complete: false,
-     pending: false,
-     error: { message: 'some error', name: 'RecoverableError' } },
-  a: { v: 'a-2' },
-  b: { v: 'b-2' },
-  c: { v: 'c-1' } }
-
-User calls abort: restoring a, b, c, status.error is Error on next tick
-
-listener:
- { status:
-   { complete: false,
-     pending: false,
-     error: { message: 'some error', name: 'Error' } },
-  a: { v: 'a' },
-  b: { v: 'b' },
-  c: { v: 'c' } }
-```
+## More examples
+    * Set a, b and load a via promise: npm run ex.changeValue
+    * Rollback data on failed promise: npm run ex.rollback

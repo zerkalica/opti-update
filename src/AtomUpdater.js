@@ -16,7 +16,7 @@ export default class AtomUpdater {
     _rollback: boolean
 
     constructor(opts: AtomUpdaterOpts) {
-        this._queue = new Queue(opts.abortOnError || false)
+        this._queue = new Queue(opts.abortOnError || false, opts.transact)
         this._transact = opts.transact
         this._rollback = opts.rollback || false
     }

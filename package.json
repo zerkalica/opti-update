@@ -20,6 +20,9 @@
     "check": "flow check",
     "testonly": "mocha",
     "ex.rollback": "babel-node examples/rollback.js",
+    "ex.lastAttach": "babel-node examples/lastAttach.js",
+    "ex.successValue": "babel-node examples/successValue.js",
+    "ex.errorValue": "babel-node examples/errorValue.js",
     "test": "eslint . && flow check && mocha",
     "test.dev": "mocha --growl --watch"
   },

@@ -37,7 +37,7 @@ export default class OperationObserver<V> {
             this._queue.cancel()
             this._update.abort(err)
         } else {
-            this._update.error(new RecoverableError(err, this._queue, this._update))
+            this._update.error(new RecoverableError(err, this._queue))
         }
     }
 

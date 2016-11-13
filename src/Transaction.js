@@ -28,14 +28,16 @@ export default class Transaction {
 
     _run<V>(loader?: ?Loader<V>): void {
         const updates = this._updates
+        let asyncUpdate: ?AsyncUpdate<V>
         if (loader) {
-            this._queue.run(new AsyncUpdate(
+            asyncUpdate = new AsyncUpdate(
                 loader,
                 this._transact,
                 this._rollback
-            ))
+            )
+            this._queue.run(asyncUpdate)
         }
-        const lastUpdate = this._queue.getLastUpdate()
+        const lastUpdate = asyncUpdate || this._queue.getLastUpdate()
         for (let i = 0; i < updates.length; i++) {
             const update = updates[i]
             update.set()
