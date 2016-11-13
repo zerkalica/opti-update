@@ -72,7 +72,7 @@ export default class AsyncUpdate<V> {
     abort(e: Error): void {
         this._status.set(new UpdaterStatus('error', e))
         const pu = this._pendingUpdates
-        for (let i = 0; i < pu.length; i++) {
+        for (let i = pu.length - 1; i >= 0; i--) {
             pu[i].rollback()
         }
     }
