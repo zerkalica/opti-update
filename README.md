@@ -55,6 +55,8 @@ updater.transaction()
 
 See [complex example](./examples/complex.js)
 
+<img src="https://rawgithub.com/zerkalica/opti-update/master/docs/workflow.svg" alt="opti-update flow diagram" />
+
 ## Setup with cellx
 
 ```js

@@ -1,0 +1,38 @@
+@startuml
+
+Init: a = 1\nb = 1\nc = 1\nstatus = pending
+UpdateAB: a = 2\nb = 2\nstatus = pending
+UpdateB: b = 3
+FetchA: a = 2
+FetchC: status.error = error
+UpdateC: c = 2\nstatus=pending
+Queue: getLastUpdate(): Update
+Status: pending\ncomplete\nerror
+UpdateB2: b = 4
+FetchB2: b = 5
+Queue -> Status: change
+Rollback: b = 3 (UpdateB),\nc = 1 (Init)
+Init --> UpdateAB
+UpdateAB --> UpdateB
+UpdateAB --> Queue: add FetchA,\n run FetchA
+UpdateB --> Queue: add to lastUpdate
+UpdateB --> UpdateC
+UpdateC --> Queue: add FetchC to queue
+UpdateC --> UpdateB2
+UpdateB2 --> Queue: add FetchB2 to queue
+
+FetchA --> FetchC: commit a,\n run FetchC
+FetchC -> User: status = error
+User -> FetchC: retry, status = pending
+User -> Rollback: abort
+
+@enduml
+1. Init a, b, c
+2. Update a, b, add fetch a to queue, run fetch a
+3. Update b, attach to Queue.lastFetch
+4. Update c, add fetch c to queue
+5. Update b, add fetch b to queue
+6. fetch a complete, commit a, run fetch c
+7. fetch c error ask user to retry/abort
+8. on retry run fetch c, get error and ask again
+9. on abort cancel all queue, rollback c to state in 1, b to state in 3
