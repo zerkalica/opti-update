@@ -1,6 +1,37 @@
 # opti-update
 
 Framework-agnostic, low-cost optimistic updates with transactions and rollbacks.
+
+What if in browser, todos in todomvc added asyncronously from server updates. How and when to rollback state changes on server error, how to handle multiple fetches in todomvc, when first fetch is running?
+
+opti-update controls atom-values and fetch status. Can be used with any atom-like lirary: [mobx][mobx], [cellx][cellx], [derivable][derivable], [atmover][atmover] etc.
+
+[mobx]: https://github.com/mobxjs/mobx
+[cellx]: https://github.com/Riim/cellx
+[derivable]: https://github.com/ds300/derivablejs
+[atmover]: https://github.com/zerkalica/atmover
+
+```js
+// @flow
+const updater = new AtomUpdater({
+    transact: cellx.transact,
+    abortOnError: true,
+    rollback: true
+})
+
+updater.transaction()
+    .set(a, '2')
+    .set(b, '2')
+    .run({
+        type: 'promise',
+        atom: a,
+        status: aStatus,
+        fetch() {
+            return Promise.reject(new Error('some'))
+        }
+    })
+```
+
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
 - [Example scenario](#example-scenario)
