@@ -1,17 +1,28 @@
 # opti-update
 
 Framework-agnostic, low-cost optimistic updates with transactions and rollbacks.
-
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
 
+- [Example scenario](#example-scenario)
 - [Setup with cellx](#setup-with-cellx)
 - [Rollback on promise error](#rollback-on-promise-error)
 - [Update on promise success](#update-on-promise-success)
 - [Attach all synced updates to last running fetch](#attach-all-synced-updates-to-last-running-fetch)
-- [More examples](#more-examples)
 
 <!-- /TOC -->
+## Example scenario
 
+1. Init a, b, c
+2. Update a, b, add fetch a to queue, run fetch a
+3. Update b, attach to current fetch a
+4. Update c, add fetch c to queue
+5. Update b, add fetch b to queue
+6. fetch a complete, commit a, run fetch c
+7. fetch c error ask user to retry/abort
+8. on retry run fetch c, get error and ask again
+9. on abort cancel all queue, rollback c to state in 1, b to state in 3
+
+See [complex example](./examples/complex.js)
 
 ## Setup with cellx
 
@@ -72,8 +83,8 @@ c = { complete: false, pending: true, error: null }
 a = 2
 b = 2
 c = { complete: false, pending: false, error: 'some' }
-a = 1
 b = 1
+a = 1
  */
 ```
 
@@ -120,6 +131,26 @@ c = UpdaterStatus { complete: true, pending: false, error: null }
 
 ```js
 // @flow
+
+/**
+ * Attach all synced updates to last running fetch
+ */
+
+import {RecoverableError} from 'opti-update/index'
+import cellx from 'cellx'
+
+import {AtomUpdater, UpdaterStatus} from 'opti-update/index'
+import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
+
+const Cell = cellx.Cell
+cellx.configure({asynchronous: false})
+
+const updater = new AtomUpdater({
+    transact: cellx.transact,
+    abortOnError: true,
+    rollback: true
+})
+
 const a = new Cell('1')
 const b = new Cell('1')
 const aStatus = new Cell(new UpdaterStatus('pending'))
@@ -155,11 +186,7 @@ a = 2
 b = 2
 b = 3
 c = { complete: false, pending: false, error: 'some' }
-a = 1
 b = 1
+a = 1
  */
 ```
-
-## More examples
-    * Set a, b and load a via promise: npm run ex.changeValue
-    * Rollback data on failed promise: npm run ex.rollback

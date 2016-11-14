@@ -50,6 +50,6 @@ c = { complete: false, pending: true, error: null }
 a = 2
 b = 2
 c = { complete: false, pending: false, error: 'some' }
-a = 1
 b = 1
+a = 1
  */

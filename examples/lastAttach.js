@@ -54,6 +54,6 @@ a = 2
 b = 2
 b = 3
 c = { complete: false, pending: false, error: 'some' }
-a = 1
 b = 1
+a = 1
  */

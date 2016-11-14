@@ -5,15 +5,17 @@
  *
  * Scenario:
  *
- * 1. Init a, b, c
- * 2. Update a, b, add fetch a to queue, run fetch a
- * 3. Update b, attach to current fetch a
- * 4. Update c, add fetch c to queue
- * 5. Update b, add fetch b to queue
- * 6. fetch a complete, commit a, run fetch c
- * 7. fetch c error ask user to retry/abort
- * 8. on retry run fetch c, get error and ask again
- * 9. on abort cancel all queue, rollback c to 1, b to 3
+
+ 1. Init a, b, c
+ 2. Update a, b, add fetch a to queue, run fetch a
+ 3. Update b, attach to current fetch a
+ 4. Update c, add fetch c to queue
+ 5. Update b, add fetch b to queue
+ 6. fetch a complete, commit a, run fetch c
+ 7. fetch c error ask user to retry/abort
+ 8. on retry run fetch c, get error and ask again
+ 9. on abort cancel all queue, rollback c to state in 1, b to state in 3
+
  */
 
 import {RecoverableError} from 'opti-update/index'

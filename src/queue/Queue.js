@@ -39,7 +39,6 @@ export default class Queue {
         }
         this._subscriptions = []
 
-
         this._queue = []
         this._current = 0
     }
@@ -50,6 +49,7 @@ export default class Queue {
         for (let i = q.length - 1; i >= c; i--) {
             q[i].abort(err)
         }
+        this.cancel()
     }
 
     abort(err: Error): void {
