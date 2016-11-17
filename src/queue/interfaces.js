@@ -20,5 +20,5 @@ export interface IInternalQueue {
     getLastUpdate(): ?IAsyncUpdate<*>;
     cancel(): void;
     abort(err: Error): void;
-    removeSubscription(subscription: Subscription): void;
+    removeSubscription(subscription: Object): void;
 }
