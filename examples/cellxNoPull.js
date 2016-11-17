@@ -1,35 +1,41 @@
 // @flow
+
+/**
+ * Attach all synced updates to last running fetch
+ */
+
 import cellx from 'cellx'
 
 import {RecoverableError, AtomUpdater, UpdaterStatus, GenericAtomSetter} from 'opti-update/index'
-import type {Fetcher, Atom, AtomUpdaterOpts} from 'opti-update/index'
-import CellxController from 'opti-update/adapters/CellxController'
+import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
 
 const Cell = cellx.Cell
 cellx.configure({asynchronous: false})
 
 const updater = new AtomUpdater({
     transact: cellx.transact,
-    abortOnError: false,
+    abortOnError: true,
     rollback: true
 })
 
-const ctl = new CellxController({
-    updater,
-    defaultValue: '1',
-    loader: ({
+const a = new Cell('1')
+const aStatus = new Cell(new UpdaterStatus('pending'))
+
+updater.transaction({
+    setter: new GenericAtomSetter(a, aStatus),
+    fetcher: {
         type: 'promise',
-        fetch: () => {
+        fetch() {
             return Promise.resolve('3')
         }
-    }: Fetcher<any>)
+    }
 })
+    .run()
 
-const a = new Cell(ctl.pull, ctl)
 const c = new Cell(() => ({
     a: a.get(),
-    isPending: a.isPending(),
-    error: a.getError()
+    isPending: aStatus.get().pending,
+    error: aStatus.get().erorr
 }))
 c.subscribe((err: ?Error, {value}) => {
     console.log('a =', value)
@@ -40,7 +46,6 @@ updater.transaction()
     .run()
 /*
 a.get() === 1
-a = { a: '2', isPending: true, error: null }
-a = { a: '2', isPending: false, error: null }
-a = { a: '3', isPending: false, error: null }
+a = { a: '2', isPending: true, error: undefined }
+a = { a: '3', isPending: false, error: undefined }
  */
