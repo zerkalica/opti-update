@@ -19,10 +19,11 @@ const updater = new AtomUpdater({
 })
 
 const a = new Cell('1')
-const aStatus = new Cell(new UpdaterStatus('pending'))
+const pending = new Cell(true)
+const error = new Cell(null)
 
 updater.transaction({
-    setter: new GenericAtomSetter(a, aStatus),
+    setter: new GenericAtomSetter(a, pending, error),
     fetcher: {
         type: 'promise',
         fetch() {
@@ -34,8 +35,8 @@ updater.transaction({
 
 const c = new Cell(() => ({
     a: a.get(),
-    isPending: aStatus.get().pending,
-    error: aStatus.get().erorr
+    isPending: pending.get(),
+    error: error.get()
 }))
 c.subscribe((err: ?Error, {value}) => {
     console.log('a =', value)

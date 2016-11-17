@@ -1,28 +1,28 @@
 // @flow
 
-import UpdaterStatus from '../UpdaterStatus'
 import type {Atom} from '../interfaces'
 
 export default class GenericAtomSetter<V> {
     _atom: Atom<V>
-    _status: Atom<UpdaterStatus>
+    _pending: Atom<boolean>
+    _error: Atom<?Error>
 
     constructor(
         atom: Atom<V>,
-        status: Atom<UpdaterStatus>
+        pending: Atom<boolean>,
+        error: Atom<?Error>
     ) {
         this._atom = atom
-        this._status = status
+        this._pending = pending
+        this._error = error
     }
 
     pending(): void {
-        const s = this._status
-        s.set(s.get().copy('pending'))
+        this._pending.set(true)
     }
 
     complete(): void {
-        const s = this._status
-        s.set(s.get().copy('complete'))
+        this._pending.set(false)
     }
 
     next(v: V): void {
@@ -30,7 +30,6 @@ export default class GenericAtomSetter<V> {
     }
 
     error(err: Error): void {
-        const s = this._status
-        s.set(s.get().copy('error', err))
+        this._error.set(err)
     }
 }

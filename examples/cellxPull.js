@@ -1,7 +1,7 @@
 // @flow
 import cellx from 'cellx'
 
-import {RecoverableError, AtomUpdater, UpdaterStatus, GenericAtomSetter} from 'opti-update/index'
+import {RecoverableError, AtomUpdater, UpdaterStatus, StatusAtomSetter} from 'opti-update/index'
 import type {Fetcher, Atom, AtomUpdaterOpts} from 'opti-update/index'
 import CellxController from 'opti-update/adapters/CellxController'
 

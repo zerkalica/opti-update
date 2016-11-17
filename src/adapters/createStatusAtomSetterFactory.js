@@ -1,24 +1,24 @@
 // @flow
 
-import GenericAtomSetter from './GenericAtomSetter'
+import StatusAtomSetter from './StatusAtomSetter'
 import UpdaterStatus from '../UpdaterStatus'
 import type {Atom} from '../interfaces'
 
 export type GetAtom<V> = (v: V) => Atom<V>
 
-export type CreateGenericAtomSetter<V> = <V>(
+export type CreateStatusAtomSetter<V> = <V>(
         value: V,
         status: UpdaterStatus
-) => GenericAtomSetter<V>
+) => StatusAtomSetter<V>
 
-export default function createGenericAtomSetterFactory(
+export default function createStatusAtomSetterFactory(
     getAtom: GetAtom<any>
-): CreateGenericAtomSetter<*> {
-    return function createGenericAtomSetter<V>(
+): CreateStatusAtomSetter<*> {
+    return function createStatusAtomSetter<V>(
         value: V,
         status: UpdaterStatus
-    ): GenericAtomSetter<V> {
-        return new GenericAtomSetter(
+    ): StatusAtomSetter<V> {
+        return new StatusAtomSetter(
             getAtom(value),
             getAtom(status)
         )

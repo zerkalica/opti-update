@@ -5,12 +5,14 @@ import {RecoverableError} from './queue'
 import UpdaterStatus from './UpdaterStatus'
 import Transaction from './Transaction'
 
-import createGenericAtomSetterFactory from './adapters/createGenericAtomSetterFactory'
+import createStatusAtomSetterFactory from './adapters/createStatusAtomSetterFactory'
 import GenericAtomSetter from './adapters/GenericAtomSetter'
+import StatusAtomSetter from './adapters/StatusAtomSetter'
 
 export {
-    createGenericAtomSetterFactory,
+    createStatusAtomSetterFactory,
     GenericAtomSetter,
+    StatusAtomSetter,
     AtomUpdater,
     RecoverableError,
     UpdaterStatus,
