@@ -2,10 +2,9 @@
 /**
  * Update on promise success
  */
-import {RecoverableError} from 'opti-update/index'
 import cellx from 'cellx'
 
-import {AtomUpdater, UpdaterStatus, GenericAtomSetter} from 'opti-update/index'
+import {RecoverableError, AtomUpdater, UpdaterStatus, GenericAtomSetter} from 'opti-update/index'
 import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
 
 const Cell = cellx.Cell
