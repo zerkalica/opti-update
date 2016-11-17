@@ -19,17 +19,18 @@ const updater = new AtomUpdater({
     rollback: true
 })
 
-updater.transaction()
-    .set(a, '2')
-    .set(b, '2')
-    .run({
+const transaction = updater.transaction({
+    fetcher: {
         type: 'promise',
-        atom: a,
-        status: aStatus,
         fetch() {
             return Promise.reject(new Error('some'))
         }
-    })
+    },
+    setter: new CommonAtomSetter(atom, status)
+})
+    .set(a, '2')
+    .set(b, '2')
+    .run()
 ```
 
 <!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
@@ -79,12 +80,7 @@ const updater = new AtomUpdater({
     abortOnError: true,
     rollback: true
 })
-```
 
-## Rollback on promise error
-
-```js
-// @flow
 const a = new Cell('1')
 const b = new Cell('1')
 const aStatus = new Cell(new UpdaterStatus('pending'))
@@ -98,24 +94,31 @@ b.subscribe((err: ?Error, {value}) => {
 aStatus.subscribe((err: ?Error, {value}) => {
     console.log('c =', {...value, error: value.error ? value.error.message : null})
 })
+```
 
-updater.transaction()
-    .set(a, '2')
-    .set(b, '2')
-    .run({
+## Rollback on promise error
+
+```js
+// @flow
+//...
+updater.transaction({
+    setter: new CommonAtomSetter(a, aStatus),
+    fetcher: {
         type: 'promise',
-        atom: a,
-        status: aStatus,
         fetch() {
             return Promise.reject(new Error('some'))
         }
-    })
+    }
+})
+    .set(a, '2')
+    .set(b, '2')
+    .run()
 
 /*
-c = { complete: false, pending: true, error: null }
+c = { type: 'pending', complete: false, pending: true, error: null }
 a = 2
 b = 2
-c = { complete: false, pending: false, error: 'some' }
+c = { type: 'error', complete: false, pending: false, error: 'some' }
 b = 1
 a = 1
  */
@@ -125,100 +128,56 @@ a = 1
 
 ```js
 // @flow
-const a = new Cell('1')
-const b = new Cell('1')
-const aStatus = new Cell(new UpdaterStatus('pending'))
-
-a.subscribe((err: ?Error, {value}) => {
-    console.log('a =', value)
-})
-b.subscribe((err: ?Error, {value}) => {
-    console.log('b =', value)
-})
-aStatus.subscribe((err: ?Error, {value}) => {
-    console.log('c =', value)
-})
-
-updater.transaction()
-    .set(a, '2')
-    .set(b, '2')
-    .run({
+//...
+updater.transaction({
+    setter: new CommonAtomSetter(a, aStatus),
+    fetcher: {
         type: 'promise',
-        atom: a,
-        status: aStatus,
         fetch() {
             return Promise.resolve('3')
         }
-    })
+    }
+})
+    .set(a, '2')
+    .set(b, '2')
+    .run()
 
 /*
-c = UpdaterStatus { complete: false, pending: true, error: null }
+c = UpdaterStatus { type: 'pending', complete: false, pending: true, error: null }
 a = 2
 b = 2
 a = 3
-c = UpdaterStatus { complete: true, pending: false, error: null }
- */
+c = UpdaterStatus { type: 'complete', complete: true, pending: false, error: null }
+*/
 ```
 
 ## Attach all synced updates to last running fetch
 
 ```js
 // @flow
-
-/**
- * Attach all synced updates to last running fetch
- */
-
-import {RecoverableError} from 'opti-update/index'
-import cellx from 'cellx'
-
-import {AtomUpdater, UpdaterStatus} from 'opti-update/index'
-import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
-
-const Cell = cellx.Cell
-cellx.configure({asynchronous: false})
-
-const updater = new AtomUpdater({
-    transact: cellx.transact,
-    abortOnError: true,
-    rollback: true
-})
-
-const a = new Cell('1')
-const b = new Cell('1')
-const aStatus = new Cell(new UpdaterStatus('pending'))
-
-a.subscribe((err: ?Error, {value}) => {
-    console.log('a =', value)
-})
-b.subscribe((err: ?Error, {value}) => {
-    console.log('b =', value)
-})
-aStatus.subscribe((err: ?Error, {value}) => {
-    console.log('c =', {...value, error: value.error ? value.error.message : null})
-})
-
-updater.transaction()
-    .set(a, '2')
-    .set(b, '2')
-    .run({
+//...
+updater.transaction({
+    setter: new CommonAtomSetter(a, aStatus),
+    fetcher: {
         type: 'promise',
-        atom: a,
-        status: aStatus,
         fetch() {
             return Promise.reject(new Error('some'))
         }
-    })
+    }
+})
+    .set(a, '2')
+    .set(b, '2')
+    .run()
 
 updater.transaction()
     .set(b, '3')
     .run()
 /*
-c = { complete: false, pending: true, error: null }
+c = { type: 'pending', complete: false, pending: true, error: null }
 a = 2
 b = 2
 b = 3
-c = { complete: false, pending: false, error: 'some' }
+c = { type: 'error', complete: false, pending: false, error: 'some' }
 b = 1
 a = 1
  */

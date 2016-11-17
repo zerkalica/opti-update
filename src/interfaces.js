@@ -1,26 +1,29 @@
 // @flow
 
-import type UpdaterStatus from './UpdaterStatus'
-
 export type Transact = (fn: () => void) => void
 
 export interface Atom<V> {
-    set(val: V): void;
-    get(): V;
+    get: () => V;
+    set: (val: V) => void;
 }
 
-interface ObservableLoader<V> {
-    type: 'observable';
-    atom: Atom<V>;
-    status: Atom<UpdaterStatus>;
-    fetch(): Observable<V, Error>;
+export interface AtomSetter<V> {
+    pending(): void;
+
+    complete(): void;
+    next(v: V): void;
+    error(err: Error): void;
 }
 
-interface PromiseLoader<V> {
+export type Fetcher<V> = {
     type: 'promise';
-    atom: Atom<V>;
-    status: Atom<UpdaterStatus>;
-    fetch(): Promise<V>;
+    fetch: () => Promise<V>;
+} | {
+    type: 'observable';
+    fetch: () => Observable<V, Error>;
 }
 
-export type Loader<V> = ObservableLoader<V> | PromiseLoader<V>
+export type Updater<V> = {
+    setter: AtomSetter<V>;
+    fetcher: Fetcher<V>;
+}

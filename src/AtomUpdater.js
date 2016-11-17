@@ -1,7 +1,7 @@
 // @flow
 
 import {Queue} from './queue'
-import type {Transact} from './interfaces'
+import type {Transact, Updater} from './interfaces'
 import Transaction from './Transaction'
 
 export interface AtomUpdaterOpts {
@@ -26,7 +26,7 @@ export default class AtomUpdater {
         return this
     }
 
-    transaction(): Transaction {
-        return new Transaction(this._queue, this._transact, this._rollback)
+    transaction<V>(updater?: ?Updater<V>): Transaction<V> {
+        return new Transaction(this._queue, this._transact, this._rollback, updater)
     }
 }

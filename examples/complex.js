@@ -15,13 +15,12 @@
  7. fetch c error ask user to retry/abort
  8. on retry run fetch c, get error and ask again
  9. on abort cancel all queue, rollback c to state in 1, b to state in 3
-
  */
 
 import {RecoverableError} from 'opti-update/index'
 import cellx from 'cellx'
 
-import {AtomUpdater, UpdaterStatus} from 'opti-update/index'
+import {AtomUpdater, UpdaterStatus, CommonAtomSetter} from 'opti-update/index'
 import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
 
 const Cell = cellx.Cell
@@ -63,17 +62,18 @@ console.log(computed.get().values)
 console.log(computed.get().status)
 
 console.log('\nupdate a, b')
-updater.transaction()
-    .set(a, '2')
-    .set(b, '2')
-    .run({
+updater.transaction({
+    setter: new CommonAtomSetter(a, aStatus),
+    fetcher: {
         type: 'promise',
-        atom: a,
-        status: aStatus,
         fetch() {
             return Promise.resolve('3')
         }
-    })
+    }
+})
+    .set(a, '2')
+    .set(b, '2')
+    .run()
 
 updater.transaction()
     .set(b, '3')
@@ -81,29 +81,31 @@ updater.transaction()
 
 let fetchCount: number = 0
 console.log('\nupdate c')
-updater.transaction()
-    .set(c, '2')
-    .run({
+updater.transaction({
+    fetcher: {
         type: 'promise',
-        atom: c,
-        status: aStatus,
         fetch() {
             console.log(`\nfetch c #${++fetchCount}`)
             return Promise.reject(new Error('some error'))
         }
-    })
+    },
+    setter: new CommonAtomSetter(c, aStatus)
+})
+    .set(c, '2')
+    .run()
 
 console.log('\nupdate b')
-updater.transaction()
-    .set(b, '4')
-    .run({
+updater.transaction({
+    fetcher: {
         type: 'promise',
-        atom: b,
-        status: aStatus,
         fetch() {
             return Promise.resolve('5')
         }
-    })
+    },
+    setter: new CommonAtomSetter(b, aStatus)
+})
+    .set(b, '4')
+    .run()
 
 console.log('\nfetching')
 setTimeout(() => {
@@ -128,41 +130,47 @@ setTimeout(() => {
 /*
 start:
 { a: '1', b: '1', c: '1' }
-{ complete: false, pending: true, error: null }
+{ type: 'pending', complete: false, pending: true, error: null }
 
 update a, b
 { a: '2', b: '2', c: '1' }
-{ complete: false, pending: true, error: null }
+{ type: 'pending', complete: false, pending: true, error: null }
 { a: '2', b: '3', c: '1' }
-{ complete: false, pending: true, error: null }
+{ type: 'pending', complete: false, pending: true, error: null }
 
 update c
 { a: '2', b: '3', c: '2' }
-{ complete: false, pending: true, error: null }
+{ type: 'pending', complete: false, pending: true, error: null }
 
 update b
 { a: '2', b: '4', c: '2' }
-{ complete: false, pending: true, error: null }
+{ type: 'pending', complete: false, pending: true, error: null }
 
 fetching
 { a: '3', b: '4', c: '2' }
-{ complete: true, pending: false, error: null }
+{ type: 'complete', complete: true, pending: false, error: null }
 { a: '3', b: '4', c: '2' }
-{ complete: false, pending: true, error: null }
+{ type: 'pending', complete: false, pending: true, error: null }
 
 fetch c #1
 { a: '3', b: '4', c: '2' }
-{ complete: false, pending: false, error: 'RecoverableError' }
+{ type: 'error',
+  complete: false,
+  pending: false,
+  error: 'RecoverableError' }
 
 User calls retry
 { a: '3', b: '4', c: '2' }
-{ complete: false, pending: true, error: null }
+{ type: 'pending', complete: false, pending: true, error: null }
 
 fetch c #2
 { a: '3', b: '4', c: '2' }
-{ complete: false, pending: false, error: 'RecoverableError' }
+{ type: 'error',
+  complete: false,
+  pending: false,
+  error: 'RecoverableError' }
 
 User calls abort: rollback c, b
 { a: '3', b: '3', c: '1' }
-{ complete: false, pending: false, error: 'Error' }
-*/
+{ type: 'error', complete: false, pending: false, error: 'Error' }
+ */

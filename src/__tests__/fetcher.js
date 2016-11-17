@@ -7,6 +7,7 @@ import {fixTick, FakeAtom, createUpdater} from './helpers'
 import UpdaterStatus from '../UpdaterStatus'
 import AtomUpdater from '../AtomUpdater'
 import RecoverableError from '../queue/RecoverableError'
+import CommonAtomSetter from '../CommonAtomSetter'
 
 describe('fetcher', () => {
     const v1 = {a: 1}
@@ -18,7 +19,7 @@ describe('fetcher', () => {
         let atom: FakeAtom<*>
         let status: FakeAtom<UpdaterStatus>
         let promise: Promise<*>
-        let loader: Object
+        let fetcher: Object
 
         beforeEach(() => {
             const u = createUpdater()
@@ -26,15 +27,16 @@ describe('fetcher', () => {
             atom = new FakeAtom(v1)
             status = new FakeAtom(new UpdaterStatus('complete'))
             promise = Promise.resolve(v3)
-            loader = {
+            fetcher = {
                 type: 'promise',
-                atom,
-                status,
                 fetch: sinon.spy(() => promise)
             }
-            updater.transaction()
+            updater.transaction({
+                fetcher,
+                setter: new CommonAtomSetter(atom, status)
+            })
                 .set(atom, v2)
-                .run(loader)
+                .run()
         })
 
         it('status is pending after transaction.run', () => {
@@ -87,7 +89,7 @@ describe('fetcher', () => {
         let atom: FakeAtom<*>
         let status: FakeAtom<UpdaterStatus>
         let promise: Promise<*>
-        let loader: Object
+        let fetcher: Object
 
         beforeEach(() => {
             const u = createUpdater()
@@ -95,15 +97,16 @@ describe('fetcher', () => {
             atom = new FakeAtom(v1)
             status = new FakeAtom(new UpdaterStatus('complete'))
             promise = Promise.reject(new Error('test error'))
-            loader = {
+            fetcher = {
                 type: 'promise',
-                atom,
-                status,
                 fetch: sinon.spy(() => promise)
             }
-            updater.transaction()
+            updater.transaction({
+                fetcher,
+                setter: new CommonAtomSetter(atom, status)
+            })
                 .set(atom, v2)
-                .run(loader)
+                .run()
         })
 
         it('status.error is RecoverableError', () => {
@@ -140,14 +143,14 @@ describe('fetcher', () => {
                 }))
             })
 
-            it('loader.fetch called again', () => {
+            it('fetcher.fetch called again', () => {
                 return promise.catch(fixTick(() => {
-                    assert(loader.fetch.calledOnce)
+                    assert(fetcher.fetch.calledOnce)
                     if (!(status.v.error instanceof RecoverableError)) {
                         throw new Error()
                     }
                     status.v.error.retry()
-                    assert(loader.fetch.calledTwice)
+                    assert(fetcher.fetch.calledTwice)
                 }))
             })
 

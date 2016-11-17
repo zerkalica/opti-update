@@ -6,14 +6,26 @@ export default class UpdaterStatus {
     complete: boolean
     pending: boolean
     error: ?Error
+    type: UpdaterStatusType
 
     constructor(
         type?: UpdaterStatusType,
         error?: ?Error
     ) {
+        this.type = type || 'pending'
         this.complete = type === 'complete'
-        this.pending = !type || type === 'pending'
+        this.pending = this.type === 'pending'
         this.error = error || null
+    }
+
+    copy(
+        type?: UpdaterStatusType,
+        error?: ?Error
+    ): UpdaterStatus {
+        if (type === this.type && error === this.error) {
+            return this
+        }
+        return new UpdaterStatus(type, error)
     }
 
     static merge(statuses: UpdaterStatus[]): UpdaterStatus {

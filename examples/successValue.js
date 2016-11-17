@@ -5,7 +5,7 @@
 import {RecoverableError} from 'opti-update/index'
 import cellx from 'cellx'
 
-import {AtomUpdater, UpdaterStatus} from 'opti-update/index'
+import {AtomUpdater, UpdaterStatus, CommonAtomSetter} from 'opti-update/index'
 import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
 
 const Cell = cellx.Cell
@@ -31,22 +31,23 @@ aStatus.subscribe((err: ?Error, {value}) => {
     console.log('c =', value)
 })
 
-updater.transaction()
-    .set(a, '2')
-    .set(b, '2')
-    .run({
+updater.transaction({
+    setter: new CommonAtomSetter(a, aStatus),
+    fetcher: {
         type: 'promise',
-        atom: a,
-        status: aStatus,
         fetch() {
             return Promise.resolve('3')
         }
-    })
+    }
+})
+    .set(a, '2')
+    .set(b, '2')
+    .run()
 
 /*
-c = UpdaterStatus { complete: false, pending: true, error: null }
+c = UpdaterStatus { type: 'pending', complete: false, pending: true, error: null }
 a = 2
 b = 2
 a = 3
-c = UpdaterStatus { complete: true, pending: false, error: null }
+c = UpdaterStatus { type: 'complete', complete: true, pending: false, error: null }
 */

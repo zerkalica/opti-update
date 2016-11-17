@@ -2,36 +2,39 @@
 
 import {Queue} from './queue'
 import SyncUpdate from './SyncUpdate'
-import type {Atom, Transact, Loader} from './interfaces'
+import type {Atom, Transact, Updater} from './interfaces'
 import AsyncUpdate from './AsyncUpdate'
 
-export default class Transaction {
+export default class Transaction<F> {
     _queue: Queue
     _updates: SyncUpdate<any>[] = []
     _transact: Transact
     _rollback: boolean
+    _updater: ?Updater<F>
 
     constructor(
         queue: Queue,
         transact: Transact,
-        rollback: boolean
+        rollback: boolean,
+        updater?: ?Updater<F>
     ) {
         this._queue = queue
         this._transact = transact
         this._rollback = rollback
+        this._updater = updater
     }
 
-    set<V>(atom: Atom<V>, newValue: V): Transaction {
+    set<V>(atom: Atom<V>, newValue: V): Transaction<F> {
         this._updates.push(new SyncUpdate(atom, newValue))
         return this
     }
 
-    _run<V>(loader?: ?Loader<V>): void {
+    _run(): void {
         const updates = this._updates
-        let asyncUpdate: ?AsyncUpdate<V>
-        if (loader) {
+        let asyncUpdate: ?AsyncUpdate<F>
+        if (this._updater) {
             asyncUpdate = new AsyncUpdate(
-                loader,
+                this._updater,
                 this._transact,
                 this._rollback
             )
@@ -45,13 +48,16 @@ export default class Transaction {
                 lastUpdate.pend(update)
             }
         }
+        this._updates = []
     }
 
-    run<V>(loader?: ?Loader<V>): void {
+    __run = () => this._run()
+
+    run(): void {
         if (this._updates.length > 1) {
-            this._transact(() => this._run(loader))
+            this._transact(this.__run)
         } else {
-            this._run(loader)
+            this._run()
         }
     }
 }
