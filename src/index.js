@@ -3,15 +3,18 @@
 import AtomUpdater from './AtomUpdater'
 import {RecoverableError} from './queue'
 import UpdaterStatus from './UpdaterStatus'
-import ValueUpdater from './ValueUpdater'
-import CommonAtomSetter from './CommonAtomSetter'
+import Transaction from './Transaction'
+
+import createGenericAtomSetterFactory from './adapters/createGenericAtomSetterFactory'
+import GenericAtomSetter from './adapters/GenericAtomSetter'
 
 export {
-    ValueUpdater,
-    CommonAtomSetter,
+    createGenericAtomSetterFactory,
+    GenericAtomSetter,
     AtomUpdater,
     RecoverableError,
-    UpdaterStatus
+    UpdaterStatus,
+    Transaction
 }
 
 export type {
@@ -20,10 +23,7 @@ export type {
 
 export type {
     Atom,
+    Fetcher,
+    AtomSetter,
     Transact
 } from './interfaces'
-
-export type {
-    GetAtom,
-    UpdaterFacade
-} from './ValueUpdater'

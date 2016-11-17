@@ -3,6 +3,7 @@
 import {Queue} from './queue'
 import type {Transact, Updater} from './interfaces'
 import Transaction from './Transaction'
+import AsyncUpdate from './AsyncUpdate'
 
 export interface AtomUpdaterOpts {
     transact: Transact;
@@ -21,12 +22,13 @@ export default class AtomUpdater {
         this._rollback = opts.rollback || false
     }
 
-    cancel(): AtomUpdater {
-        this._queue.cancel()
-        return this
-    }
-
     transaction<V>(updater?: ?Updater<V>): Transaction<V> {
-        return new Transaction(this._queue, this._transact, this._rollback, updater)
+        return new Transaction(
+            this._queue,
+            this._transact,
+            updater
+                ? new AsyncUpdate(updater, this._transact, this._rollback)
+                : null
+        )
     }
 }

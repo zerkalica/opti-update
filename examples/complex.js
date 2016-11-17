@@ -17,10 +17,8 @@
  9. on abort cancel all queue, rollback c to state in 1, b to state in 3
  */
 
-import {RecoverableError} from 'opti-update/index'
 import cellx from 'cellx'
-
-import {AtomUpdater, UpdaterStatus, CommonAtomSetter} from 'opti-update/index'
+import {AtomUpdater, UpdaterStatus, GenericAtomSetter, RecoverableError} from 'opti-update/index'
 import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
 
 const Cell = cellx.Cell
@@ -63,7 +61,7 @@ console.log(computed.get().status)
 
 console.log('\nupdate a, b')
 updater.transaction({
-    setter: new CommonAtomSetter(a, aStatus),
+    setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
         type: 'promise',
         fetch() {
@@ -89,7 +87,7 @@ updater.transaction({
             return Promise.reject(new Error('some error'))
         }
     },
-    setter: new CommonAtomSetter(c, aStatus)
+    setter: new GenericAtomSetter(c, aStatus)
 })
     .set(c, '2')
     .run()
@@ -102,7 +100,7 @@ updater.transaction({
             return Promise.resolve('5')
         }
     },
-    setter: new CommonAtomSetter(b, aStatus)
+    setter: new GenericAtomSetter(b, aStatus)
 })
     .set(b, '4')
     .run()

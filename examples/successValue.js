@@ -5,7 +5,7 @@
 import {RecoverableError} from 'opti-update/index'
 import cellx from 'cellx'
 
-import {AtomUpdater, UpdaterStatus, CommonAtomSetter} from 'opti-update/index'
+import {AtomUpdater, UpdaterStatus, GenericAtomSetter} from 'opti-update/index'
 import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
 
 const Cell = cellx.Cell
@@ -32,7 +32,7 @@ aStatus.subscribe((err: ?Error, {value}) => {
 })
 
 updater.transaction({
-    setter: new CommonAtomSetter(a, aStatus),
+    setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
         type: 'promise',
         fetch() {

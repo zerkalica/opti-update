@@ -26,7 +26,7 @@ const transaction = updater.transaction({
             return Promise.reject(new Error('some'))
         }
     },
-    setter: new CommonAtomSetter(atom, status)
+    setter: new GenericAtomSetter(atom, status)
 })
     .set(a, '2')
     .set(b, '2')
@@ -63,14 +63,9 @@ See [complex example](./examples/complex.js)
 ```js
 // @flow
 
-/**
- * Auto rollback on error
- */
-import {RecoverableError} from 'opti-update/index'
 import cellx from 'cellx'
-
-import {AtomUpdater, UpdaterStatus} from 'opti-update/index'
-import type {Atom, AtomUpdaterOpts} from 'opti-update/index'
+import {AtomUpdater, UpdaterStatus, RecoverableError} from 'opti-update'
+import type {Atom, AtomUpdaterOpts} from 'opti-update'
 
 const Cell = cellx.Cell
 cellx.configure({asynchronous: false})
@@ -102,7 +97,7 @@ aStatus.subscribe((err: ?Error, {value}) => {
 // @flow
 //...
 updater.transaction({
-    setter: new CommonAtomSetter(a, aStatus),
+    setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
         type: 'promise',
         fetch() {
@@ -130,7 +125,7 @@ a = 1
 // @flow
 //...
 updater.transaction({
-    setter: new CommonAtomSetter(a, aStatus),
+    setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
         type: 'promise',
         fetch() {
@@ -157,7 +152,7 @@ c = UpdaterStatus { type: 'complete', complete: true, pending: false, error: nul
 // @flow
 //...
 updater.transaction({
-    setter: new CommonAtomSetter(a, aStatus),
+    setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
         type: 'promise',
         fetch() {

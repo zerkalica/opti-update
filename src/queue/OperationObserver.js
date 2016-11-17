@@ -5,7 +5,7 @@ import RecoverableError from './RecoverableError'
 
 export default class OperationObserver<V> {
     _unsubscribe: () => void
-    _update: IAsyncUpdate<V>
+    update: IAsyncUpdate<V>
     _queue: IInternalQueue
     _abortOnError: boolean
 
@@ -17,18 +17,18 @@ export default class OperationObserver<V> {
         abortOnError: boolean
     ) {
         this._queue = queue
-        this._update = update
+        this.update = update
         this._abortOnError = abortOnError
     }
 
     next(value: ?V): void {
         if (value) {
-            this._update.set(value)
+            this.update.set(value)
         }
     }
 
     _unsubscribe(): void {
-        this._queue.removeSubscription(this.subscription)
+        this._queue.removeSubscription(this)
     }
 
     error(err: Error): void {
@@ -36,13 +36,13 @@ export default class OperationObserver<V> {
         if (this._abortOnError) {
             this._queue.abort(err)
         } else {
-            this._update.error(new RecoverableError(err, this._queue))
+            this.update.error(new RecoverableError(err, this._queue))
         }
     }
 
     complete(value?: ?V): void {
         this._unsubscribe()
-        this._update.commit(value)
+        this.update.commit(value)
         this._queue.next()
     }
 }

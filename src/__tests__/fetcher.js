@@ -7,7 +7,7 @@ import {fixTick, FakeAtom, createUpdater} from './helpers'
 import UpdaterStatus from '../UpdaterStatus'
 import AtomUpdater from '../AtomUpdater'
 import RecoverableError from '../queue/RecoverableError'
-import CommonAtomSetter from '../CommonAtomSetter'
+import GenericAtomSetter from '../adapters/GenericAtomSetter'
 
 describe('fetcher', () => {
     const v1 = {a: 1}
@@ -33,7 +33,7 @@ describe('fetcher', () => {
             }
             updater.transaction({
                 fetcher,
-                setter: new CommonAtomSetter(atom, status)
+                setter: new GenericAtomSetter(atom, status)
             })
                 .set(atom, v2)
                 .run()
@@ -103,7 +103,7 @@ describe('fetcher', () => {
             }
             updater.transaction({
                 fetcher,
-                setter: new CommonAtomSetter(atom, status)
+                setter: new GenericAtomSetter(atom, status)
             })
                 .set(atom, v2)
                 .run()

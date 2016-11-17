@@ -2,26 +2,23 @@
 
 import {Queue} from './queue'
 import SyncUpdate from './SyncUpdate'
-import type {Atom, Transact, Updater} from './interfaces'
+import type {Atom, Transact} from './interfaces'
 import AsyncUpdate from './AsyncUpdate'
 
 export default class Transaction<F> {
     _queue: Queue
     _updates: SyncUpdate<any>[] = []
     _transact: Transact
-    _rollback: boolean
-    _updater: ?Updater<F>
+    _asyncUpdate: ?AsyncUpdate<any>
 
     constructor(
         queue: Queue,
         transact: Transact,
-        rollback: boolean,
-        updater?: ?Updater<F>
+        asyncUpdate?: ?AsyncUpdate<F>
     ) {
         this._queue = queue
         this._transact = transact
-        this._rollback = rollback
-        this._updater = updater
+        this._asyncUpdate = asyncUpdate
     }
 
     set<V>(atom: Atom<V>, newValue: V): Transaction<F> {
@@ -29,15 +26,15 @@ export default class Transaction<F> {
         return this
     }
 
+    cancel(): void {
+        this._queue.cancel(this._asyncUpdate)
+        this._updates = []
+    }
+
     _run(): void {
         const updates = this._updates
-        let asyncUpdate: ?AsyncUpdate<F>
-        if (this._updater) {
-            asyncUpdate = new AsyncUpdate(
-                this._updater,
-                this._transact,
-                this._rollback
-            )
+        const asyncUpdate = this._asyncUpdate
+        if (asyncUpdate) {
             this._queue.run(asyncUpdate)
         }
         const lastUpdate = asyncUpdate || this._queue.getLastUpdate()

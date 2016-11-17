@@ -1,9 +1,9 @@
 // @flow
 
-import UpdaterStatus from './UpdaterStatus'
-import type {Atom} from './interfaces'
+import UpdaterStatus from '../UpdaterStatus'
+import type {Atom} from '../interfaces'
 
-export default class CommonAtomSetter<V> {
+export default class GenericAtomSetter<V> {
     _atom: Atom<V>
     _status: Atom<UpdaterStatus>
 
