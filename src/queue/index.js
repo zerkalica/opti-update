@@ -9,7 +9,6 @@ export {
 }
 
 export type {
-    Unsubscribable,
     IAsyncUpdate,
     ISyncUpdate
 } from './interfaces'

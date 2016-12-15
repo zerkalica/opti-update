@@ -81,7 +81,6 @@ let fetchCount: number = 0
 console.log('\nupdate c')
 updater.transaction({
     fetcher: {
-        type: 'promise',
         fetch() {
             console.log(`\nfetch c #${++fetchCount}`)
             return Promise.reject(new Error('some error'))
@@ -95,7 +94,6 @@ updater.transaction({
 console.log('\nupdate b')
 updater.transaction({
     fetcher: {
-        type: 'promise',
         fetch() {
             return Promise.resolve('5')
         }

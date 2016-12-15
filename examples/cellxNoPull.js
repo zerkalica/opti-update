@@ -25,7 +25,6 @@ const error = new Cell(null)
 updater.transaction({
     setter: new GenericAtomSetter(a, pending, error),
     fetcher: {
-        type: 'promise',
         fetch() {
             return Promise.resolve('3')
         }

@@ -33,7 +33,6 @@ aStatus.subscribe((err: ?Error, {value}) => {
 updater.transaction({
     setter: new StatusAtomSetter(a, aStatus),
     fetcher: {
-        type: 'promise',
         fetch() {
             return Promise.reject(new Error('some'))
         }

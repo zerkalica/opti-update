@@ -8,6 +8,7 @@ import UpdaterStatus from '../UpdaterStatus'
 import AtomUpdater from '../AtomUpdater'
 import RecoverableError from '../queue/RecoverableError'
 import StatusAtomSetter from '../adapters/StatusAtomSetter'
+import type {Fetcher} from '../interfaces'
 
 describe('fetcher', () => {
     const v1 = {a: 1}
@@ -19,7 +20,7 @@ describe('fetcher', () => {
         let atom: FakeAtom<*>
         let status: FakeAtom<UpdaterStatus>
         let promise: Promise<*>
-        let fetcher: Object
+        let fetcher: Fetcher<*>
 
         beforeEach(() => {
             const u = createUpdater()
@@ -27,10 +28,9 @@ describe('fetcher', () => {
             atom = new FakeAtom(v1)
             status = new FakeAtom(new UpdaterStatus('complete'))
             promise = Promise.resolve(v3)
-            fetcher = {
-                type: 'promise',
+            fetcher = ({
                 fetch: sinon.spy(() => promise)
-            }
+            })
             updater.transaction({
                 fetcher,
                 setter: new StatusAtomSetter(atom, status)
@@ -97,10 +97,9 @@ describe('fetcher', () => {
             atom = new FakeAtom(v1)
             status = new FakeAtom(new UpdaterStatus('complete'))
             promise = Promise.reject(new Error('test error'))
-            fetcher = {
-                type: 'promise',
+            fetcher = ({
                 fetch: sinon.spy(() => promise)
-            }
+            })
             updater.transaction({
                 fetcher,
                 setter: new StatusAtomSetter(atom, status)

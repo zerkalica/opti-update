@@ -11,10 +11,11 @@ export interface AtomUpdaterOpts {
     rollback?: boolean;
 }
 
-interface TransactionOpts<V> {
+type TransactionOpts<V> = {
     fetcher: Fetcher<V>;
     setter: AtomSetter<V>;
 }
+
 export default class AtomUpdater {
     _queue: Queue
     _transact: Transact

@@ -16,11 +16,10 @@ export interface AtomSetter<V> {
 }
 
 export type Fetcher<V> = {
-    type: 'promise';
     fetch: () => Promise<V>;
 } | {
-    type: 'observable';
-    fetch: () => Observable<V, Error>;
+    fetch: void;
+    observable: () => Observable<V, Error>;
 }
 
 export interface Canceller {

@@ -45,9 +45,9 @@ export default class AsyncUpdate<V> {
         const fetcher = this._fetcher
         this._atomSetter.pending()
 
-        return fetcher.type === 'promise'
+        return fetcher.fetch
             ? promiseToObservable(fetcher.fetch())
-            : fetcher.fetch()
+            : fetcher.observable()
     }
 
     set(v: V): void {
