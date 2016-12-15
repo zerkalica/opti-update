@@ -23,7 +23,11 @@ export type Fetcher<V> = {
     fetch: () => Observable<V, Error>;
 }
 
-export type Updater<V> = {
-    setter: AtomSetter<V>;
-    fetcher: Fetcher<V>;
+export interface Canceller {
+    cancel(): void;
+}
+
+export interface Queue {
+    addSync<V>(a: Atom<V>, v: V): void;
+    addAsync<V>(fetcher: Fetcher<V>, ctl: AtomSetter<V>): Canceller;
 }

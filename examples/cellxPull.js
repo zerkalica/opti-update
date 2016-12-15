@@ -16,7 +16,7 @@ const updater = new AtomUpdater({
 
 const ctl = new CellxController({
     updater,
-    defaultValue: '1',
+    value: '1',
     loader: ({
         type: 'promise',
         fetch: () => {

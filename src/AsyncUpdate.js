@@ -1,8 +1,7 @@
 // @flow
 
 import type {ISyncUpdate, IAsyncUpdate} from './queue'
-import type {AtomSetter, Transact, Updater, Fetcher} from './interfaces'
-import type {UpdaterStatusType} from './UpdaterStatus'
+import type {AtomSetter, Transact, Fetcher} from './interfaces'
 import promiseToObservable from './promiseToObservable'
 
 export default class AsyncUpdate<V> {
@@ -10,19 +9,36 @@ export default class AsyncUpdate<V> {
 
     _transact: Transact
     _fetcher: Fetcher<V>
-    _lastStatusType: ?UpdaterStatusType
     _isRollbackEnabled: boolean
     _atomSetter: AtomSetter<V>
 
+    _subscription: ?Subscription
+
     constructor(
-        updater: Updater<V>,
+        fetcher: Fetcher<V>,
+        setter: AtomSetter<V>,
         transact: Transact,
         isRollbackEnabled: boolean
     ) {
-        this._fetcher = updater.fetcher
+        this._fetcher = fetcher
         this._transact = transact
         this._isRollbackEnabled = isRollbackEnabled
-        this._atomSetter = updater.setter
+        this._atomSetter = setter
+    }
+
+    setSubscription(subscription: Subscription): void {
+        this._subscription = subscription
+    }
+
+    isSubscribed(): boolean {
+        return !!this._subscription
+    }
+
+    unsubscribe(): void {
+        if (this._subscription) {
+            this._subscription.unsubscribe()
+            this._subscription = null
+        }
     }
 
     getObservable(): Observable<V, Error> {
@@ -60,6 +76,7 @@ export default class AsyncUpdate<V> {
     }
 
     abort(e: Error): void {
+        this.unsubscribe()
         this._atomSetter.error(e)
         const pu = this._pendingUpdates
         for (let i = pu.length - 1; i >= 0; i--) {

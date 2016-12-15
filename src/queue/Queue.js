@@ -4,15 +4,12 @@ import OperationObserver from './OperationObserver'
 import type {Transact} from '../interfaces'
 
 export default class Queue {
-    _maxQueueSize: number
     _queue: IAsyncUpdate<*>[] = []
-    _observers: OperationObserver<*>[] = []
     _current: number = 0
     _abortOnError: boolean
     _transact: Transact
 
-    constructor(abortOnError: boolean, transact: Transact, maxQueueSize?: ?number) {
-        this._maxQueueSize = maxQueueSize || 1
+    constructor(abortOnError: boolean, transact: Transact) {
         this._abortOnError = abortOnError
         this._transact = transact
     }
@@ -26,41 +23,39 @@ export default class Queue {
         if (this._current >= this._queue.length) {
             return
         }
-        if (this._observers.length >= this._maxQueueSize) {
+        if (this._queue[this._current].isSubscribed()) {
             return
         }
         this.retry()
     }
 
-    cancel(asyncUpdate?: ?IAsyncUpdate<*>): void {
-        const observers = asyncUpdate
-            ? this._observers.filter((obs: OperationObserver<*>) => obs.update === asyncUpdate)
-            : this._observers
-
-        for (let i = 0, l = observers.length; i < l; i++) {
-            observers[i].subscription.unsubscribe()
+    _reset(): void {
+        const queue = this._queue
+        for (let i = 0; i < queue.length; i++) {
+            const q = queue[i]
+            q.unsubscribe()
         }
-        this._observers = []
-
         this._queue = []
         this._current = 0
+    }
+
+    cancel(): void {
+        this._reset()
     }
 
     __abort(err: Error): void {
         const q = this._queue
         const c = this._current
         for (let i = q.length - 1; i >= c; i--) {
-            q[i].abort(err)
+            const update = q[i]
+            update.abort(err)
         }
-        this.cancel()
+        this._queue = []
+        this._current = 0
     }
 
     abort(err: Error): void {
         this._transact(() => this.__abort(err))
-    }
-
-    removeSubscription(item: OperationObserver<*>): void {
-        this._observers = this._observers.filter((target: OperationObserver<*>) => target !== item)
     }
 
     next(): void {
@@ -68,7 +63,7 @@ export default class Queue {
         if (this._current < this._queue.length) {
             this._run()
         } else {
-            this.cancel()
+            this._reset()
         }
     }
 
@@ -86,10 +81,9 @@ export default class Queue {
         const observer = new OperationObserver(
             this,
             update,
-            this._abortOnError
+            this._abortOnError,
+            observable
         )
-
-        observer.subscription = observable.subscribe(observer)
-        this._observers.push(observer)
+        update.setSubscription(observable.subscribe(observer))
     }
 }

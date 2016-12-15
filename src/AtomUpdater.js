@@ -1,7 +1,7 @@
 // @flow
 
 import {Queue} from './queue'
-import type {Transact, Updater} from './interfaces'
+import type {Transact, Fetcher, AtomSetter} from './interfaces'
 import Transaction from './Transaction'
 import AsyncUpdate from './AsyncUpdate'
 
@@ -11,6 +11,10 @@ export interface AtomUpdaterOpts {
     rollback?: boolean;
 }
 
+interface TransactionOpts<V> {
+    fetcher: Fetcher<V>;
+    setter: AtomSetter<V>;
+}
 export default class AtomUpdater {
     _queue: Queue
     _transact: Transact
@@ -22,12 +26,12 @@ export default class AtomUpdater {
         this._rollback = opts.rollback || false
     }
 
-    transaction<V>(updater?: ?Updater<V>): Transaction<V> {
+    transaction<V>(opts?: ?TransactionOpts<V>): Transaction<V> {
         return new Transaction(
             this._queue,
             this._transact,
-            updater
-                ? new AsyncUpdate(updater, this._transact, this._rollback)
+            opts
+                ? new AsyncUpdate(opts.fetcher, opts.setter, this._transact, this._rollback)
                 : null
         )
     }
