@@ -21,7 +21,6 @@ const updater = new AtomUpdater({
 
 const transaction = updater.transaction({
     fetcher: {
-        type: 'promise',
         fetch() {
             return Promise.reject(new Error('some'))
         }
@@ -99,7 +98,6 @@ aStatus.subscribe((err: ?Error, {value}) => {
 updater.transaction({
     setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
-        type: 'promise',
         fetch() {
             return Promise.reject(new Error('some'))
         }
@@ -127,7 +125,6 @@ a = 1
 updater.transaction({
     setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
-        type: 'promise',
         fetch() {
             return Promise.resolve('3')
         }
@@ -154,7 +151,6 @@ c = UpdaterStatus { type: 'complete', complete: true, pending: false, error: nul
 updater.transaction({
     setter: new GenericAtomSetter(a, aStatus),
     fetcher: {
-        type: 'promise',
         fetch() {
             return Promise.reject(new Error('some'))
         }
